@@ -63,6 +63,9 @@ Vă solicit să susțineți identificarea unei soluții legale pentru păstrarea
 Vă rog să îmi comunicați numărul de înregistrare și răspunsul prin email și să înaintați întrebările care vă depășesc competența instituției responsabile.`
   }
 };
+// Unele servicii (ex. Yahoo) afișează greșit diacriticele în linkurile mailto.
+const plain = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\u2013\u2014]/g, '-').replace(/[\u201e\u201c\u201d]/g, '"');
+Object.values(templates).forEach(t => { t.subject = plain(t.subject); t.body = plain(t.body); });
 const byId = id => document.getElementById(id);
 const drafts = {};
 let current = 'primarie';
@@ -84,25 +87,26 @@ byId('reset').addEventListener('click', () => {
   if ((byId('body').value !== templates[current].body || byId('subject').value !== templates[current].subject) && !window.confirm('Înlocuiești modificările tale cu modelul inițial pentru această instituție?')) return;
   delete drafts[current]; render();
 });
-function message() { return byId('body').value.trim() + '\n\nCu respect,\n' + byId('name').value.trim(); }
+function message() { return plain(byId('body').value.trim() + '\n\nCu respect,\n' + byId('name').value.trim()); }
+function subject() { return plain(byId('subject').value); }
 function valid() {
   byId('name').setCustomValidity(byId('name').value.trim() ? '' : 'Completează numele tău.');
   return byId('form').reportValidity();
 }
 byId('form').addEventListener('submit', event => {
   event.preventDefault(); if (!valid()) return;
-  window.location.href = 'mailto:' + templates[current].email + '?subject=' + encodeURIComponent(byId('subject').value) + '&body=' + encodeURIComponent(message());
+  window.location.href = 'mailto:' + templates[current].email + '?subject=' + encodeURIComponent(subject()) + '&body=' + encodeURIComponent(message());
   byId('status').textContent = 'Am cerut deschiderea aplicației de email. Mesajul nu este trimis automat. Dacă nu se deschide, folosește Gmail sau copiază mesajul.';
 });
 byId('gmail').addEventListener('click', () => {
   if (!valid()) return;
-  const query = new URLSearchParams({view:'cm',fs:'1',to:templates[current].email,su:byId('subject').value,body:message()});
+  const query = new URLSearchParams({view:'cm',fs:'1',to:templates[current].email,su:subject(),body:message()});
   window.open('https://mail.google.com/mail/?' + query.toString(), '_blank', 'noopener,noreferrer');
   byId('status').textContent = 'Verifică ciorna în Gmail și confirmă tu trimiterea. Dacă nu se deschide o filă, copiază mesajul.';
 });
 byId('copy').addEventListener('click', async () => {
   if (!valid()) return;
-  const text = 'Către: ' + templates[current].email + '\nSubiect: ' + byId('subject').value + '\n\n' + message();
+  const text = 'Catre: ' + templates[current].email + '\nSubiect: ' + subject() + '\n\n' + message();
   try { await navigator.clipboard.writeText(text); byId('status').textContent = 'Destinatarul, subiectul și mesajul au fost copiate. Le poți lipi în emailul tău.'; }
   catch { const field = document.createElement('textarea'); field.value = text; field.readOnly = true; field.setAttribute('aria-label','Mesaj pentru copiere manuală'); byId('status').replaceChildren(document.createTextNode('Copierea automată nu este disponibilă. Selectează și copiază textul de mai jos.'), field); field.select(); }
 });
