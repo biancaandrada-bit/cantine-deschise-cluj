@@ -111,3 +111,8 @@ byId('copy').addEventListener('click', async () => {
   catch { const field = document.createElement('textarea'); field.value = text; field.readOnly = true; field.setAttribute('aria-label','Mesaj pentru copiere manuală'); byId('status').replaceChildren(document.createTextNode('Copierea automată nu este disponibilă. Selectează și copiază textul de mai jos.'), field); field.select(); }
 });
 render();
+byId('share-link').addEventListener('click', async () => {
+  const url = 'https://biancaandrada-bit.github.io/cantine-deschise-cluj/';
+  try { await navigator.clipboard.writeText(url); byId('share-status').textContent = 'Linkul a fost copiat.'; }
+  catch { byId('share-status').textContent = url; }
+});
